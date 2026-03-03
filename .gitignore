@@ -1,0 +1,86 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Poetry (poetry.lock은 Git에 포함하여 의존성 일관성 유지)
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# MyPy & Ruff
+.mypy_cache/
+.ruff_cache/
+
+# Celery
+celerybeat-schedule
+dump.rdb
+
+# Pre-commit
+.pre-commit-config.yaml
+
+# OS
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# IDE Cache
+*.iml
+*.ics
+*.sublime-workspace
