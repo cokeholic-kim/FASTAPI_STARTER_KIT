@@ -1,0 +1,38 @@
+name: lint
+description: 코드 품질 검사 (Black + Ruff + MyPy)
+script: |
+  echo "🔍 코드 품질 검사를 시작합니다..."
+  echo ""
+
+  # 1. Black 포맷팅 확인
+  echo "📝 Black 포맷팅 검사 중..."
+  black app tests --check --line-length=100
+  if [ $? -ne 0 ]; then
+    echo "❌ Black 포맷팅 실패"
+    echo "💡 자동 수정하려면: black app tests --line-length=100"
+    exit 1
+  fi
+  echo "✅ Black 포맷팅 통과"
+  echo ""
+
+  # 2. Ruff 린팅
+  echo "🔧 Ruff 린팅 검사 중..."
+  ruff check app tests
+  if [ $? -ne 0 ]; then
+    echo "❌ Ruff 린팅 실패"
+    exit 1
+  fi
+  echo "✅ Ruff 린팅 통과"
+  echo ""
+
+  # 3. MyPy 타입 체크
+  echo "🎯 MyPy 타입 체크 중..."
+  mypy app
+  if [ $? -ne 0 ]; then
+    echo "❌ MyPy 타입 체크 실패"
+    exit 1
+  fi
+  echo "✅ MyPy 타입 체크 통과"
+  echo ""
+
+  echo "🎉 모든 코드 품질 검사를 통과했습니다!"
