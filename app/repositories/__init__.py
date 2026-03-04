@@ -1,1 +1,4 @@
-"""저장소 모듈"""
+﻿"""Repository exports."""
+from app.repositories.user import UserRepository
+
+__all__ = ["UserRepository"]

@@ -1,566 +1,225 @@
-# FastAPI Starter Kit
+﻿# FastAPI Starter Kit
 
-프로덕션 레벨의 FastAPI 백엔드 API 스타터 킷입니다. Python 3.12 LTS, PM2, Docker를 포함합니다.
+[![CI](https://github.com/cokeholic-kim/FASTAPI_STARTER_KIT/actions/workflows/ci.yml/badge.svg)](https://github.com/cokeholic-kim/FASTAPI_STARTER_KIT/actions/workflows/ci.yml)
 
-## 📋 목차
+## 개요
 
-- [기술 스택](#기술-스택)
-- [빠른 시작](#빠른-시작)
-- [프로젝트 구조](#프로젝트-구조)
-- [개발 가이드](#개발-가이드)
-- [배포](#배포)
-- [테스트](#테스트)
+이 템플릿은 FastAPI 기반 스타터 키트로, 현재는 실제 동작이 보장된 최소 기능 세트를 기준으로 정리되어 있습니다.
 
----
-
-## 🛠 기술 스택
-
-### 코어
-- **Python** 3.12 LTS (지원: 2028년 10월까지)
-- **FastAPI** 0.104+ - 고성능 웹 프레임워크
-- **Pydantic** V2 - 데이터 검증 & DTO
-- **SQLAlchemy** 2.x - ORM
-- **PostgreSQL** - 프로덕션 데이터베이스
-
-### 개발/테스트
-- **Pytest** + pytest-asyncio - 테스트 프레임워크
-- **Black** - 코드 포매팅
-- **Ruff** - 린팅
-- **mypy** - 타입 체킹
-- **pre-commit** - 깃 훅
-
-### 프로세스 관리 & 인프라
-- **PM2** - 프로세스 매니저
-- **Docker** + Docker Compose - 컨테이너화
-- **Nginx** - 리버스 프록시
-- **Redis** - 캐싱
-
-### 추가 기능
-- **JWT** - 인증 토큰
-- **Celery** - 비동기 작업 큐
-- **structlog** - 구조화된 로깅
-- **slowapi** - Rate Limiting
+- Python 3.12
+- FastAPI + Pydantic V2
+- SQLAlchemy 2.x (Async)
+- PostgreSQL (asyncpg)
+- pytest + pytest-asyncio
 
 ---
 
-## 🚀 빠른 시작
+## 실행
 
-### 사전 요구사항
-- Python 3.12+
-- PostgreSQL 12+
-- Redis 6+
-- Node.js (PM2 실행)
-- Docker & Docker Compose (선택사항)
-
-### 설치 및 실행
-
-**1. 저장소 클론**
-```bash
-cd fastapi-starter
-```
-
-**2. 환경 설정**
 ```bash
 cp .env.example .env
-# .env 파일 편집하여 데이터베이스 설정 수정
+poetry install   # 또는 pip install -r requirements.txt
+poetry run uvicorn app.main:app --reload --port 8000
 ```
 
-**3. 의존성 설치**
-```bash
-# Poetry 사용
-poetry install
+- Health API: `http://localhost:8000/health`
+- Docs: `http://localhost:8000/docs`
 
-# 또는 pip 사용
-pip install -r requirements.txt
-```
+## API 계약 문서
 
-**4. 데이터베이스 마이그레이션**
+- 최신 API 계약은 [docs/api-contract.md](docs/api-contract.md) 에 정리되어 있습니다.
+- 주요 요청/응답 예시는 해당 문서의 `요청/응답 예시` 섹션에서 확인할 수 있습니다.
+
+---
+
+## 환경 설정
+
+`.env`의 `DATABASE_URL`은 async 엔진(`create_async_engine`) 기준으로 설정합니다.
+
+- 기본: `postgresql+asyncpg://postgres:password@localhost:5432/fastapi_db`
+- 로컬 테스트/실험에서는 `sqlite+aiosqlite:///./fastapi_db.db`처럼 명시적으로 변경해서 사용
+
+- 관측성
+  - `PROMETHEUS_ENABLED=True` (기본값)
+
+---
+
+## 현재 구현 상태
+
+- [x] 예외 미들웨어 (`AppException` -> `ErrorResponse`)
+- [x] `/health` 라우트(헬스체크)
+- [x] User 도메인 기본 CRUD
+  - [x] `POST /users`
+  - [x] `GET /users`
+  - [x] `GET /users/{user_id}`
+  - [x] `PUT /users/{user_id}`
+  - [x] `DELETE /users/{user_id}`
+- [x] 요청 로그/추적 미들웨어
+  - [x] `X-Request-ID` 생성/전파
+- [x] 에러 처리 미들웨어
+  - [x] 공통 에러 응답(`ErrorResponse`) 및 `DUPLICATE/NOT_FOUND` 등의 상태 변환
+- [x] 운영 관측성
+  - [x] `/metrics` (Prometheus)
+  - [x] `/observability/health`
+  - [x] `/observability/request-metadata`
+  - [x] 민감정보 마스킹(이메일/토큰/패스워드 계열)
+  - [x] DB/배치 로그의 correlation-id 통합
+- [x] 배치 예시 (`app/services/batch_job_example.py`)
+- [x] Alembic 마이그레이션 기본 구조
+- [x] GitHub Actions 기반 CI
+
+### 구현 검증 상태
+
+- [x] `tests/unit` (서비스 단위 테스트)
+- [x] `tests/integration` (Health / Metrics / Observability / User API)
+- [x] 중복 이메일 생성 처리 (409) 및 동시성 race-condition 보정
+- [x] `DELETE /users/{id}` 204 No Content 응답
+- [ ] 인증/인가 라우트 (로그인/토큰 갱신)
+
+### 향후 구현 예정
+
+- JWT 인증/권한(회원가입·로그인)
+- 인증 기반 라우트 보호
+- 사용자 도메인 기능 확장(프로필/권한/토큰 갱신 등)
+- 운영용 배포 가이드 강화
+
+---
+
+## DB 마이그레이션
+
 ```bash
 alembic upgrade head
-```
-
-**5. 개발 서버 실행**
-
-**방법 1: 직접 실행**
-```bash
-uvicorn app.main:app --reload --port 8000
-```
-
-**방법 2: PM2 사용**
-```bash
-npm install -g pm2
-pm2 start ecosystem.config.js
-```
-
-**방법 3: Docker Compose 사용**
-```bash
-docker-compose up -d
-```
-
-### API 문서 접속
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **OpenAPI**: http://localhost:8000/openapi.json
-
----
-
-## 📁 프로젝트 구조
-
-```
-fastapi-starter/
-├── app/
-│   ├── core/                  # 핵심 설정
-│   │   ├── config.py         # 환경 설정
-│   │   ├── database.py       # DB 연결
-│   │   ├── logging.py        # 로깅 설정
-│   │   └── exceptions.py     # 커스텀 예외
-│   │
-│   ├── models/               # SQLAlchemy ORM 모델
-│   │   ├── base.py          # 기본 모델
-│   │   └── ...
-│   │
-│   ├── schemas/              # Pydantic DTO
-│   │   ├── response.py      # 응답 형식
-│   │   └── ...
-│   │
-│   ├── controllers/          # API 라우트
-│   │   ├── health.py        # 헬스 체크
-│   │   └── ...
-│   │
-│   ├── services/             # 비즈니스 로직
-│   │   └── ...
-│   │
-│   ├── repositories/         # DB 접근 계층
-│   │   └── ...
-│   │
-│   ├── middlewares/          # 미들웨어
-│   │   └── error_handler.py
-│   │
-│   ├── utils/                # 유틸리티
-│   │   └── ...
-│   │
-│   └── main.py              # 애플리케이션 진입점
-│
-├── tests/                    # 테스트
-│   ├── unit/                # 단위 테스트
-│   ├── integration/         # 통합 테스트
-│   └── conftest.py         # 테스트 설정
-│
-├── migrations/               # Alembic 마이그레이션
-│
-├── docker-compose.yml        # Docker Compose 설정
-├── Dockerfile               # Docker 이미지 빌드
-├── ecosystem.config.js       # PM2 설정
-├── pyproject.toml           # Poetry 설정
-├── pytest.ini               # Pytest 설정
-├── .env.example             # 환경 변수 예시
-├── CODING_GUIDE.md          # 코드 작성 가이드
-└── README.md                # 이 파일
-```
-
-### 아키텍처
-레이어드 아키텍처를 따릅니다:
-
-```
-Controller (라우트) → Service (비즈니스 로직) → Repository (데이터 접근)
-```
-
-자세한 내용은 [CODING_GUIDE.md](./CODING_GUIDE.md)를 참조하세요.
-
----
-
-## 📚 개발 가이드
-
-### 코드 스타일
-
-**자동 포매팅:**
-```bash
-# Black 포매팅
-black app/ tests/
-
-# Ruff 린팅
-ruff check app/ tests/
-
-# 모두 한 번에 (권장)
-pre-commit run --all-files
-```
-
-**Pre-commit 설정:**
-```bash
-# 설치
-pre-commit install
-
-# 커밋 시 자동으로 실행됨
-git commit -m "메시지"
-```
-
-### 새 기능 추가
-
-**1. 데이터베이스 모델 생성** (`app/models/`)
-```python
-from app.models.base import BaseModel
-from sqlalchemy.orm import Mapped, mapped_column
-
-class User(BaseModel):
-    __tablename__ = "users"
-
-    email: Mapped[str] = mapped_column(unique=True)
-    name: Mapped[str]
-```
-
-**2. DTO 스키마 생성** (`app/schemas/`)
-```python
-from pydantic import BaseModel, EmailStr
-
-class UserCreateRequest(BaseModel):
-    email: EmailStr
-    name: str
-
-class UserResponse(BaseModel):
-    id: int
-    email: str
-    name: str
-```
-
-**3. Repository 생성** (`app/repositories/`)
-```python
-class UserRepository:
-    async def create(self, data):
-        # DB 작업
-        pass
-```
-
-**4. Service 생성** (`app/services/`)
-```python
-class UserService:
-    async def create_user(self, request):
-        # 비즈니스 로직
-        pass
-```
-
-**5. Controller 생성** (`app/controllers/`)
-```python
-@router.post("/users")
-async def create_user(request, service):
-    user = await service.create_user(request)
-    return SuccessResponse(data=user)
-```
-
-자세한 가이드는 [CODING_GUIDE.md](./CODING_GUIDE.md)를 참조하세요.
-
----
-
-## 🧪 테스트
-
-### 단위 테스트
-
-```bash
-# 모든 단위 테스트 실행
-pytest tests/unit/
-
-# 특정 테스트 파일
-pytest tests/unit/test_user_service.py
-
-# 특정 테스트 함수
-pytest tests/unit/test_user_service.py::test_create_user
-```
-
-### 통합 테스트
-
-```bash
-# 모든 통합 테스트
-pytest tests/integration/
-
-# 헬스 체크 테스트
-pytest tests/integration/test_health.py
-```
-
-### 전체 테스트 & 커버리지
-
-```bash
-# 전체 테스트 실행
-pytest
-
-# 커버리지 리포트 생성
-pytest --cov=app --cov-report=html
-
-# HTML 리포트 보기
-open htmlcov/index.html
-```
-
-### 테스트 작성 예시
-
-```python
-import pytest
-from httpx import AsyncClient
-
-@pytest.mark.asyncio
-async def test_create_user_success(client: AsyncClient):
-    """사용자 생성 성공 테스트"""
-    response = await client.post(
-        "/users",
-        json={
-            "email": "test@example.com",
-            "name": "Test User",
-        }
-    )
-
-    assert response.status_code == 201
-    assert response.json()["success"] is True
-```
-
----
-
-## 🐳 Docker를 사용한 배포
-
-### 개발 환경
-
-```bash
-# 모든 서비스 시작
-docker-compose up -d
-
-# 로그 확인
-docker-compose logs -f api
-
-# 서비스 중지
-docker-compose down
-```
-
-### 프로덕션 배포
-
-**1. 환경 설정**
-```bash
-cp .env.example .env.production
-# .env.production 편집
-```
-
-**2. Docker 이미지 빌드**
-```bash
-docker build -t fastapi-starter:1.0.0 .
-```
-
-**3. 이미지 푸시** (선택사항)
-```bash
-docker tag fastapi-starter:1.0.0 your-registry/fastapi-starter:1.0.0
-docker push your-registry/fastapi-starter:1.0.0
-```
-
-**4. 배포**
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-```
-
----
-
-## 🔒 보안
-
-### 환경 변수
-민감한 정보는 반드시 환경 변수로 관리하세요:
-- 데이터베이스 URL
-- API 키
-- JWT 시크릿 키
-
-```bash
-# .env 파일 (버전 관리에서 제외)
-SECRET_KEY=your-secret-key-here
-```
-
-### 프로덕션 체크리스트
-- [ ] `DEBUG=False` 설정
-- [ ] `SECRET_KEY` 변경
-- [ ] HTTPS 활성화
-- [ ] CORS 설정 확인
-- [ ] 데이터베이스 백업 설정
-- [ ] 로깅 및 모니터링 설정
-- [ ] Rate Limiting 활성화
-
----
-
-## 📊 모니터링
-
-### 헬스 체크
-```bash
-curl http://localhost:8000/health
-```
-
-응답:
-```json
-{
-  "success": true,
-  "message": "애플리케이션이 정상 작동 중입니다",
-  "data": {
-    "status": "healthy"
-  }
-}
-```
-
-### PM2 모니터링
-```bash
-# PM2 프로세스 상태 확인
-pm2 status
-
-# 실시간 모니터링
-pm2 monit
-
-# 로그 확인
-pm2 logs fastapi-api
-
-# 재시작
-pm2 restart fastapi-api
-
-# 중지
-pm2 stop fastapi-api
-```
-
----
-
-## 🔄 데이터베이스 마이그레이션
-
-### 마이그레이션 생성
-```bash
-alembic revision --autogenerate -m "사용자 테이블 추가"
-```
-
-### 마이그레이션 적용
-```bash
-# 최신 버전으로 업그레이드
-alembic upgrade head
-
-# 특정 버전으로 업그레이드
-alembic upgrade 1234abc
-```
-
-### 마이그레이션 롤백
-```bash
-# 이전 버전으로
-alembic downgrade -1
-
-# 모든 마이그레이션 제거
-alembic downgrade base
-```
-
----
-
-## 📦 의존성 관리
-
-### Poetry 사용 (권장)
-```bash
-# 의존성 추가
-poetry add package-name
-
-# 의존성 제거
-poetry remove package-name
-
-# 의존성 업데이트
-poetry update
-
-# requirements.txt 생성
-poetry export -f requirements.txt --output requirements.txt
-```
-
-### pip 사용
-```bash
-# 의존성 설치
-pip install -r requirements.txt
-
-# requirements.txt 생성
-pip freeze > requirements.txt
-```
-
----
-
-## 🐛 문제 해결
-
-### PostgreSQL 연결 오류
-```bash
-# 데이터베이스 상태 확인
-docker-compose ps
-
-# 데이터베이스 재시작
-docker-compose restart db
-
-# 로그 확인
-docker-compose logs db
-```
-
-### 마이그레이션 충돌
-```bash
-# 마이그레이션 히스토리 확인
 alembic history
-
-# 충돌하는 마이그레이션 제거 후 다시 생성
 alembic downgrade -1
-alembic revision --autogenerate -m "새 마이그레이션"
 ```
 
-### 테스트 실패
+---
+
+## 테스트/CI
+
 ```bash
-# 테스트 데이터베이스 초기화
-pytest --cache-clear
+poetry run pytest
+poetry run pytest tests/unit
+poetry run pytest tests/integration
+poetry run pytest --cov=app --cov-report=html
+```
 
-# 자세한 로그 보기
-pytest -vv -s tests/
+실행 항목:
+
+- 단위 테스트: `tests/unit`
+- 통합 테스트: `tests/integration`
+
+## 운영 관측성
+
+- 로그
+  - 요청 ID(`X-Request-ID`) 기반 JSON 구조화 로그
+  - 민감정보 마스킹(이메일/비밀번호/토큰) 적용
+- 연동 포인트
+  - `GET /observability/request-metadata` (요청 메타 조회)
+  - 배치 작업은 `app.utils.observability.batch_context`로 동일 `correlation_id`를 사용
+- Prometheus 메트릭
+  - `GET /metrics` 노출
+  - 수집 대상: `http_requests_total`, `http_request_latency_seconds`, `http_requests_in_progress`
+  - 요청 메타 지표는 내부 관측성 경로를 제외해 수집합니다.
+    - 제외 경로: `/metrics`, `/observability/*`
+- 배치 관측성 예시
+  - `app/services/batch_job_example.py`에서 `batch_context`로 배치 작업의 `correlation_id`를 공통 로그 체인으로 묶는 예시 제공
+  - 배치/잡 로그/DB 로그에서 동일 ID를 재사용하면 장애 추적이 쉬워집니다.
+
+### GitHub Actions
+
+`.github/workflows/ci.yml`은 `push`/`pull_request`를 `main`과 `master` 모두에서 실행하도록 설정되어 있습니다.
+
+---
+
+## 성능/구현 보강 포인트
+
+- `UserRepository.list()`는 전체 행을 모두 적재해 개수를 구하지 않고, `COUNT(*)` 집계로 총 개수를 계산하도록 수정되었습니다.
+- CI 브랜치가 `master`인 환경에서도 검증이 누락되지 않도록 워크플로우 트리거를 보강했습니다.
+- 요청 단위 로그 전략(HTTP 미들웨어) 추가: `X-Request-ID` 생성/전파, 처리시간, 상태코드/요청 경로를 JSON 로그로 수집합니다.
+- Prometheus 메트릭 수집을 위한 `/metrics` 엔드포인트와 요청 기반 `Counter/Histogram/Gauge` 미들웨어를 추가했습니다.
+- 민감 정보 마스킹: 로그 이벤트에서 이메일/비밀번호/토큰류를 일괄 마스킹해 노출을 통제했습니다.
+- 요청 메타 지표 전용 엔드포인트(`GET /observability/request-metadata`)를 추가해 헬스/메트릭 경로와 분리된 관측 채널을 구성했습니다.
+
+---
+
+## 폴더 구조
+
+```text
+.
+├── app/
+│   ├── core/
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── exceptions.py
+│   │   └── logging.py
+│   ├── controllers/
+│   │   ├── __init__.py
+│   │   ├── health.py
+│   │   ├── observability.py
+│   │   └── users.py
+│   ├── middlewares/
+│   │   ├── error_handler.py
+│   │   ├── request_logging.py
+│   │   └── metrics.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   └── user.py
+│   ├── repositories/
+│   │   ├── __init__.py
+│   │   └── user.py
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── response.py
+│   │   └── user.py
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   └── observability.py
+  │   ├── services/
+  │   │   ├── __init__.py
+  │   │   ├── user.py
+  │   │   └── batch_job_example.py
+│   ├── __init__.py
+│   └── main.py
+├── migrations/
+│   ├── env.py
+│   ├── script.py.mako
+│   └── versions/
+│       └── 0001_create_users_table.py
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── integration/
+│   │   ├── __init__.py
+│   │   ├── test_health.py
+│   │   ├── test_observability.py
+│   │   ├── test_metrics.py
+│   │   └── test_users.py
+│   └── unit/
+│       ├── __init__.py
+│       └── test_user_service.py
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── docs/
+│   └── api-contract.md
+├── alembic.ini
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example
+├── pyproject.toml
+├── requirements.txt
+├── requirements-dev.txt
+├── requirements-minimal.txt
+├── pytest.ini
+└── README.md
 ```
 
 ---
 
-## 📚 참고 문서
+## 라이선스
 
-- [FastAPI 공식 문서](https://fastapi.tiangolo.com/)
-- [SQLAlchemy 공식 문서](https://docs.sqlalchemy.org/)
-- [Pydantic 공식 문서](https://docs.pydantic.dev/)
-- [Pytest 공식 문서](https://docs.pytest.org/)
-- [Docker 공식 문서](https://docs.docker.com/)
-- [PM2 공식 문서](https://pm2.keymetrics.io/)
+MIT
 
----
 
-## 📝 코드 작성 가이드
-
-[CODING_GUIDE.md](./CODING_GUIDE.md)를 참조하세요. 아래 주요 사항들을 포함합니다:
-
-- 레이어드 아키텍처 적용
-- DTO 패턴 사용
-- 의존성 주입
-- 에러 핸들링
-- API 응답 형식 일관성
-- 테스트 작성 가이드
-- 환경 변수 관리
-
----
-
-## 🤝 기여
-
-1. Feature Branch 생성: `git checkout -b feature/새기능`
-2. 코드 변경: `git add .`
-3. Commit: `git commit -m "feature: 새기능 추가"`
-4. Push: `git push origin feature/새기능`
-5. Pull Request 생성
-
----
-
-## 📄 라이선스
-
-이 프로젝트는 MIT 라이선스를 따릅니다.
-
----
-
-## 💬 질문 & 피드백
-
-문제가 있거나 제안사항이 있으시면 이슈를 생성해주세요.
-
----
-
-## 🎯 Checklist (새 프로젝트 시작)
-
-- [ ] `.env` 파일 생성 및 설정
-- [ ] `poetry install` 또는 `pip install -r requirements.txt`
-- [ ] `alembic upgrade head` (DB 마이그레이션)
-- [ ] `pre-commit install` (깃 훅 설정)
-- [ ] `pytest` (테스트 실행)
-- [ ] 헬스 체크 엔드포인트 확인
-- [ ] API 문서 (http://localhost:8000/docs) 확인
-
----
-
-**Happy Coding! 🚀**

@@ -1,21 +1,24 @@
-"""구조화된 로깅 설정"""
 import logging
 import sys
 
 import structlog
-from pythonjsonlogger import jsonlogger
+import structlog.contextvars
+from pythonjsonlogger.json import JsonFormatter
 
 from app.core.config import settings
+from app.utils.observability import sanitize_event_dict
 
 
 def setup_logging() -> None:
-    """로깅 설정"""
+    """Configure application logging."""
     structlog.configure(
         processors=[
             structlog.stdlib.filter_by_level,
             structlog.stdlib.add_logger_name,
             structlog.stdlib.add_log_level,
             structlog.stdlib.PositionalArgumentsFormatter(),
+            structlog.contextvars.merge_contextvars,
+            sanitize_event_dict,
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
@@ -27,22 +30,21 @@ def setup_logging() -> None:
         cache_logger_on_first_use=True,
     )
 
-    # 표준 로깅 설정
     logging.basicConfig(
         format="%(message)s",
         stream=sys.stdout,
         level=settings.LOG_LEVEL,
     )
 
-    # JSON 로거 설정
     json_handler = logging.StreamHandler(sys.stdout)
-    json_handler.setFormatter(jsonlogger.JsonFormatter())
+    json_handler.setFormatter(JsonFormatter())
 
     root_logger = logging.getLogger()
-    root_logger.addHandler(json_handler)
+    if not any(isinstance(handler, logging.StreamHandler) for handler in root_logger.handlers):
+        root_logger.addHandler(json_handler)
     root_logger.setLevel(settings.LOG_LEVEL)
 
 
 def get_logger(name: str) -> structlog.BoundLogger:
-    """로거 인스턴스 반환"""
+    """Return a structured logger."""
     return structlog.get_logger(name)
